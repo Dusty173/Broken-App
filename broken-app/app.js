@@ -1,18 +1,32 @@
 const express = require('express');
-let axios = require('axios');
-var app = express();
+const axios = require('axios');
+const ExpressError = require("./expressError")
+const app = express();
 
-app.post('/', function(req, res, next) {
-  try {
-    let results = req.body.developers.map(async d => {
-      return await axios.get(`https://api.github.com/users/${d}`);
-    });
-    let out = results.map(r => ({ name: r.data.name, bio: r.data.bio }));
 
-    return res.send(JSON.stringify(out));
-  } catch {
-    next(err);
+app.post('/', async (req, res, next) => {
+  try{
+    const baseURL = `https://api.github.com/users/`
+    const {developers} = req.body;
+    const d = developers;
+    const data = {};
+
+    if(!d) throw new ExpressError('No developers found', 404);
+    for(let dev of d){
+      
+      const res = await axios.get(`${baseURL}${dev}`);
+      
+      data.push({
+        name: res.data.name,
+        bio: res.date.bio
+      })
+    }
+
+    return res.json({data});
+  
+  } catch(err){
+    next(err)
   }
 });
 
-app.listen(3000);
+module.exports = app;
